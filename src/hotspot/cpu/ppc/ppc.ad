@@ -1706,7 +1706,11 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       if (cbuf) {
         C2_MacroAssembler _masm(cbuf);
         __ addi(R0, R1_SP, dst_offset);
-        __ stxvd2x(Rsrc, R0);
+        if (VM_Version::has_brw()) {
+          __ stxvx(Rsrc, R0);
+        } else {
+          __ stxvd2x(Rsrc, R0);
+        }
       }
       size += 8;
     }
@@ -1717,7 +1721,11 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       if (cbuf) {
         C2_MacroAssembler _masm(cbuf);
         __ addi(R0, R1_SP, src_offset);
-        __ lxvd2x(Rdst, R0);
+        if (VM_Version::has_brw()) {
+          __ lxvx(Rdst, R0);
+        } else {
+          __ lxvd2x(Rdst, R0);
+        }
       }
       size += 8;
     }
