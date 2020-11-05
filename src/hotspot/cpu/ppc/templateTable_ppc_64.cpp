@@ -1609,6 +1609,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
 
   __ fcmpu(CCR0, Rfirst, Rsecond); // compare
   // if unordered_result is 1, treat unordered_result like 'greater than'
+  assert(unordered_result == 1 || unordered_result == -1, "only supported");
   __ set_cmpu3(R17_tos, (unordered_result == 1) ? false : true);
 }
 

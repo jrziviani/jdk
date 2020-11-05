@@ -11419,8 +11419,9 @@ instruct testL_reg_imm(flagsRegCR0 cr0, iRegLsrc src1, uimmL16 src2, immL_0 zero
 %}
 
 // Manifest a CmpL3 result in an integer register.
-instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
+instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpL3 src1 src2));
+  effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
   size(VM_Version::has_brw() ? 16 : 20);
 
@@ -11753,8 +11754,9 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
 %}
 
 // Compare float, generate -1,0,1
-instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2) %{
+instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
+  effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
   size(VM_Version::has_brw() ? 20 : 24);
 
@@ -11762,8 +11764,7 @@ instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2) %{
 
   ins_encode %{
     __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
-    __ cror(CCR0, Assembler::less, CCR0, Assembler::summary_overflow);
-    __ set_cmp3($dst$$Register);
+    __ set_cmpu3($dst$$Register, true);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -11837,8 +11838,9 @@ instruct cmpD_reg_reg_Ex(flagsReg crx, regD src1, regD src2) %{
 %}
 
 // Compare double, generate -1,0,1
-instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2) %{
+instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
+  effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
   size(VM_Version::has_brw() ? 20 : 24);
 
@@ -11846,8 +11848,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2) %{
 
   ins_encode %{
     __ fcmpu(CCR0, $src1$$FloatRegister, $src2$$FloatRegister);
-    __ cror(CCR0, Assembler::less, CCR0, Assembler::summary_overflow);
-    __ set_cmp3($dst$$Register);
+    __ set_cmpu3($dst$$Register, true);
   %}
   ins_pipe(pipe_class_default);
 %}
