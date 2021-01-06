@@ -14023,6 +14023,63 @@ instruct vpopcnt4I_reg(vecX dst, vecX src) %{
   ins_pipe(pipe_class_default);
 %}
 
+
+// --------------------------------- VectorCast -------------------------------
+inline BasicType vector_element_basic_type(const Node *n) {
+  return n->bottom_type()->is_vect()->element_basic_type();
+}
+
+inline uint vector_length_in_bytes(const Node* n) {
+  const TypeVect* vt = n->bottom_type()->is_vect();
+  return vt->length_in_bytes();
+}
+
+instruct vcastLtoX(vec dst, vec src) %{
+  predicate(vector_element_basic_type(n) == T_INT ||
+            vector_element_basic_type(n) == T_FLOAT ||
+            vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (VectorCastL2X src));
+  format %{ "vector_cast_l2x  $dst, $src\t!" %}
+
+  ins_encode %{
+    BasicType to_elem_bt = vector_element_basic_type(this);
+    int vlen = vector_length_in_bytes(this, $src);
+    int vlen_enc = vector_length_encoding(this, $src);
+/*
+    asm volatile ("xxswapd   32, %x1     \n\t"
+                  "xxswapd   32,  32     \n\t"
+                  "vspltisw   1,   0     \n\t"
+                  "vpkuwum    0,   1, 0  \n\t"
+                  "xxspltd  %x0,  32, 1  \n\t"
+                  : "=&wa"(res)
+                  : "wa"(fourI));
+*/
+    switch (to_elem_bt) {
+      case T_BYTE:
+        break;
+      case T_SHORT:
+        break;
+      case T_INT:
+        __ xxswapd(VSR32, $src$$VectorSRegister);
+        __ xxswapd(VSR32, VSR32);
+        __ vspltisw(VSR33, 0);
+        __ vpkuwum(VSR32, VSR33, VSR32);
+        __ xxspltd($dst$$VectorSRegister, VSR32, 1);
+        break;
+      case T_FLOAT:
+        __ xvcvsxdsp($dst$$VectorSRegister, $src$$VectorSRegister);
+        break;
+      case T_DOUBLE:
+        __ xvcvsxddp($dst$$VectorSRegister, $src$$VectorSRegister);
+        break;
+
+      default: assert(false, "%s", type2name(to_elem_bt));
+    }
+  %}
+
+  ins_pipe( pipe_slow );
+%}
+
 // --------------------------------- FMA --------------------------------------
 // dst + src1 * src2
 instruct vfma4F(vecX dst, vecX src1, vecX src2) %{
